@@ -249,7 +249,7 @@ export default function ChatWindow() {
         {
           id: crypto.randomUUID(),
           role: "assistant",
-          content: "Please resend your message",
+          content: "I'm having trouble connecting, please try again!",
           stockData: null,
           timestamp: new Date(),
         },
