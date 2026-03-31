@@ -21,24 +21,27 @@ export async function POST(request) {
     // ── Step 1: Look for stock tickers in the user's message ──────────────
     const tickers = extractTickers(message);
 
-    // ── Step 2: Fetch live stock data for the first ticker found ──────────
-    // We only fetch one at a time to keep responses focused
-    let stockData = null;
-    let stockContext = "";
+    // ── Step 2: Fetch live stock data for all tickers ─────────────
+let stockData = [];
+let stockContext = "";
 
-    if (tickers.length > 0) {
-      stockData = await getStockData(tickers[0]);
-      if (stockData) {
-        stockContext = formatStockContext(stockData);
-      }
-    }
+for (const ticker of tickers) {
+  const data = await getStockData(ticker);
+  if (data) {
+    stockData.push(data);
+    // Optionally append each to the context
+    stockContext += formatStockContext(data) + "\n\n";
+  }
+}
 
-    // ── Step 3: Ask Flin (Gemini) with full history + stock context ───────
-    const reply = await askFlin(message, history, stockContext || undefined);
+// Only send first stock to StockCard if UI expects a single object
+const firstStock = stockData[0] ?? null;
 
-    // ── Step 4: Return Flin's reply and any stock data ────────────────────
-    return NextResponse.json({ reply, stockData });
+// ── Step 3: Ask Flin (Gemini) with full history + stock context ─────
+const reply = await askFlin(message, history, stockContext || undefined);
 
+// ── Step 4: Return Flin's reply and any stock data ────────────
+return NextResponse.json({ reply, stockData: firstStock });
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(

@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Flin — AI Stock Advisor",
+  title: "Flin: AI Stock Advisor",
   description: "Your personal AI-powered stock market advisor",
 };
 
