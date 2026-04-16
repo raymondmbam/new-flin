@@ -1,10 +1,28 @@
 import { NextResponse } from "next/server";
 import { askFlin } from "@/lib/gemini";
 import { extractTickers, getStockData, formatStockContext } from "@/lib/stockApi";
+import { generateImage } from "@/lib/imagen";
+
+// Detect if user wants an image
+function isImageRequest(message) {
+  const lower = message.toLowerCase();
+  const triggers = [
+    "generate an image",
+    "create an image", 
+    "draw",
+    "show me a picture",
+    "generate a chart image",
+    "visualize",
+  ];
+  const isRequest = triggers.some((t) => lower.includes(t));
+
+  // Log to confirm if image request is detected
+  console.log("Is image request:", isRequest, "Message:", message);
+  
+  return isRequest;
+}
 
 // POST /api/chat
-// Body: { message: string, history: array }
-// Returns: { reply: string, stockData: object | null }
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -18,30 +36,48 @@ export async function POST(request) {
       );
     }
 
-    // ── Step 1: Look for stock tickers in the user's message ──────────────
+    // Check for image request 
+    let imageUrl = null;
+
+    if (isImageRequest(message)) {
+      console.log("Image request detected, generating image...");
+      const imagePrompt = `Financial illustration: ${message}. Professional, clean, business style.`;
+      imageUrl = await generateImage(imagePrompt);  // Log the generation result
+      console.log("Generated image URL:", imageUrl);
+    }
+
+    
     const tickers = extractTickers(message);
 
-    // ── Step 2: Fetch live stock data for all tickers ─────────────
-let stockData = [];
-let stockContext = "";
+    
+    let stockData = [];
+    let stockContext = "";
 
-for (const ticker of tickers) {
-  const data = await getStockData(ticker);
-  if (data) {
-    stockData.push(data);
-    // Optionally append each to the context
-    stockContext += formatStockContext(data) + "\n\n";
-  }
-}
+    for (const ticker of tickers) {
+      const data = await getStockData(ticker);
+      if (data) {
+        stockData.push(data);
+        stockContext += formatStockContext(data) + "\n\n";
+      }
+    }
 
-// Only send first stock to StockCard if UI expects a single object
-const firstStock = stockData[0] ?? null;
+    const firstStock = stockData[0] ?? null;
 
-// ── Step 3: Ask Flin (Gemini) with full history + stock context ─────
-const reply = await askFlin(message, history, stockContext, userName || undefined);
+    // ── 🤖 Step 3: Ask Gemini (Flin) ─────────────
+    const reply = await askFlin(
+      message,
+      history,
+      stockContext,
+      userName || undefined
+    );
 
-// ── Step 4: Return Flin's reply and any stock data ────────────
-return NextResponse.json({ reply, stockData: firstStock });
+    // ── 🚀 Step 4: Return everything ─────────────
+    return NextResponse.json({
+      reply,
+      stockData: firstStock,
+      imageUrl, // ← NEW
+    });
+
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(

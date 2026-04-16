@@ -1,0 +1,15 @@
+[
+  {
+    "role": "user",
+    "content": "Which stock should I buy?",
+    "timestamp": "2026-04-02T12:12:33.237Z",
+    "stockData": null
+  },
+  {
+    "role": "assistant",
+    "content": "That's a great question, Raymond! To give you the best possible advice, I need a little more information about your investment style and what you're hoping to achieve.\n\nCould you tell me a bit about these three things?\n\n*   **Your Risk Preference:** Are you comfortable with higher risk for potentially higher returns (high risk), or do you prefer more stable investments even if returns are modest (low risk)? Or somewhere in the middle (medium risk)?\n*   **Your Investment Horizon:** Are you looking to invest for the short-term (less than a year), or are you thinking long-term (several years or more)?\n*   **Your Investment Goal:** What are you hoping to achieve? Are you looking for:\n    *   **Growth:** To see the value of your investment increase significantly over time?\n    *   **Dividends:** Regular income payments from your investment?\n    *   **Capital Preservation:** Protecting your initial investment, even if it means lower returns?\n\nOnce I have a better understanding of these points, I can help you explore some suitable options!",
+    "timestamp": "2026-04-02T12:12:36.440Z",
+    "stockData": null,
+    "imageUrl": null
+  }
+]

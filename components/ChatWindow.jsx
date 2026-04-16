@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
+import Image from "./Image";
+import LogsModal from "./LogsModal";
 
 // ── Flin's avatar SVG ─────────────────────────────────────────
 export function FlinAvatar({ size = 32 }) {
@@ -175,6 +177,7 @@ export default function ChatWindow() {
   const [isLoading, setIsLoading]     = useState(false);
   const [mode, setMode]               = useState("welcome");
   const [isExiting, setIsExiting]     = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
 
   const bottomRef = useRef(null);
 
@@ -239,6 +242,7 @@ export default function ChatWindow() {
           role: "assistant",
           content: data.reply,
           stockData: data.stockData ?? null,
+          imageUrl: data.imageUrl ?? null, 
           timestamp: new Date(),
         },
       ]);
@@ -263,6 +267,35 @@ export default function ChatWindow() {
     setMessages([]);
     setIsExiting(false);
     setMode("welcome");
+  }
+
+  async function handleSaveConversation() {
+    if (messages.length === 0) return;
+
+    try {
+      const conversation = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        stockData: msg.stockData,
+        imageUrl: msg.imageUrl
+      }));
+
+      const res = await fetch("/api/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversation }),
+      });
+
+      if (res.ok) {
+        alert("Conversation saved successfully!");
+      } else {
+        alert("Failed to save conversation");
+      }
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      alert("Error saving conversation");
+    }
   }
 
   function handleSaveProfile(name, avatar) {
@@ -292,12 +325,27 @@ export default function ChatWindow() {
         </div>
         <div className="ml-auto flex items-center gap-3">
           {mode === "chat" && (
-            <button
-              onClick={handleNewChat}
-              className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-3 py-1 rounded-full hover:bg-gray-100"
-            >
-              New chat
-            </button>
+            <>
+              <button
+                onClick={handleSaveConversation}
+                disabled={messages.length === 0}
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-3 py-1 rounded-full hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setShowLogsModal(true)}
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-3 py-1 rounded-full hover:bg-gray-100"
+              >
+                Logs
+              </button>
+              <button
+                onClick={handleNewChat}
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors px-3 py-1 rounded-full hover:bg-gray-100"
+              >
+                New chat
+              </button>
+            </>
           )}
           <button
             onClick={() => setShowDropdown((v) => !v)}
@@ -342,6 +390,14 @@ export default function ChatWindow() {
           <ChatInput onSend={handleSend} isLoading={isLoading} mode={mode} />
         </div>
       </div>
+
+      {/* ── Logs Modal ── */}
+      <LogsModal
+        isOpen={showLogsModal}
+        onClose={() => setShowLogsModal(false)}
+        userName={userName}
+        userAvatar={userAvatar}
+      />
 
     </div>
   );
