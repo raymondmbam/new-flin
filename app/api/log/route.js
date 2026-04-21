@@ -24,11 +24,15 @@ export async function GET() {
         const conversation = JSON.parse(content);
 
         // Extract timestamp from filename
-        const timestamp = filename.replace('conversation-', '').replace('.json', '').replace(/-/g, ':').replace('T', 'T').replace('Z', 'Z');
+       // After
+        const rawTimestamp = filename.replace('conversation-', '').replace('.json', '');
+        const [datePart, timePart] = rawTimestamp.split('T');
+        const fixedTime = timePart.replace(/-/g, ':').replace(/:(\d{3}Z)$/, '.$1');
+        const timestamp = new Date(`${datePart}T${fixedTime}`);
 
         return {
           id: filename,
-          timestamp: new Date(timestamp),
+          timestamp: timestamp,
           messages: conversation,
           messageCount: conversation.length,
           preview: conversation.length > 0 ? conversation[0].content.substring(0, 100) + (conversation[0].content.length > 100 ? '...' : '') : 'Empty conversation'
@@ -81,6 +85,7 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true, filename });
 
+    
   } catch (error) {
     console.error("Log API error:", error);
     return NextResponse.json(
