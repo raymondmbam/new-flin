@@ -2,55 +2,37 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-// Helper: ensure logs directory exists
-function getLogsDir() {
-  const logsDir = path.join(process.cwd(), "logs");
-
-  if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
-  }
-
-  return logsDir;
-}
-
 // GET /api/log
+// Returns list of logged conversations
 export async function GET() {
   try {
-    const logsDir = getLogsDir();
+    const logsDir = path.join(process.cwd(), "logs");
+
+    if (!fs.existsSync(logsDir)) {
+      return NextResponse.json({ conversations: [] });
+    }
 
     const files = fs.readdirSync(logsDir)
-      .filter(file => file.endsWith(".json"))
+      .filter(file => file.endsWith('.json'))
       .sort()
-      .reverse();
+      .reverse(); // Most recent first
 
     const conversations = files.map(filename => {
       try {
         const filePath = path.join(logsDir, filename);
-        const content = fs.readFileSync(filePath, "utf8");
+        const content = fs.readFileSync(filePath, 'utf8');
+        const conversation = JSON.parse(content);
 
-        const parsed = JSON.parse(content);
-
-        // ✅ NEW: support both old + new format safely
-        const messages = Array.isArray(parsed)
-          ? parsed
-          : parsed.messages || [];
-
-        const createdAt = parsed.createdAt
-          ? new Date(parsed.createdAt)
-          : new Date(); // fallback instead of 1970
+        // Extract timestamp from filename
+        const timestamp = filename.replace('conversation-', '').replace('.json', '').replace(/-/g, ':').replace('T', 'T').replace('Z', 'Z');
 
         return {
           id: filename,
-          timestamp: createdAt,
-          messages,
-          messageCount: messages.length,
-          preview:
-            messages.length > 0
-              ? messages[0].content.substring(0, 100) +
-                (messages[0].content.length > 100 ? "..." : "")
-              : "Empty conversation"
+          timestamp: new Date(timestamp),
+          messages: conversation,
+          messageCount: conversation.length,
+          preview: conversation.length > 0 ? conversation[0].content.substring(0, 100) + (conversation[0].content.length > 100 ? '...' : '') : 'Empty conversation'
         };
-
       } catch (error) {
         console.error(`Error reading ${filename}:`, error);
         return null;
@@ -69,6 +51,8 @@ export async function GET() {
 }
 
 // POST /api/log
+// Body: { conversation: array of messages }
+// Saves the conversation to a JSON file in logs directory
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -81,20 +65,19 @@ export async function POST(request) {
       );
     }
 
-    const logsDir = getLogsDir();
+    // Create logs directory if it doesn't exist
+    const logsDir = path.join(process.cwd(), "logs");
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
 
-    const createdAt = new Date().toISOString();
-
-    const filename = `conversation-${createdAt.replace(/[:.]/g, "-")}.json`;
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `conversation-${timestamp}.json`;
     const filePath = path.join(logsDir, filename);
 
-    // ✅ NEW: store structured data (fixes timestamp issue permanently)
-    const payload = {
-      createdAt,
-      messages: conversation
-    };
-
-    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2));
+    // Save conversation as JSON
+    fs.writeFileSync(filePath, JSON.stringify(conversation, null, 2));
 
     return NextResponse.json({ success: true, filename });
 
