@@ -33,8 +33,11 @@ export async function GET() {
     return NextResponse.json({ conversations: conversations.filter(Boolean) });
 
   } catch (error) {
-    console.error("Log GET API error:", error);
-    return NextResponse.json({ error: "Failed to retrieve logs" }, { status: 500 });
+    console.error("Log API error:", error);
+    return NextResponse.json({ 
+      error: "Failed to save log",
+      detail: error.message  // add this line
+    }, { status: 500 });
   }
 }
 
