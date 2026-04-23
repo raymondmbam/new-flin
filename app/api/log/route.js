@@ -55,7 +55,7 @@ export async function POST(request) {
     const filename = `conversation-${timestamp}.json`;
 
     await put(filename, JSON.stringify(conversation, null, 2), {
-      access: "public",
+      access: "private",
       contentType: "application/json",
     });
 
