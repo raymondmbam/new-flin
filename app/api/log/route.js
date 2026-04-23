@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { put, list, get } from "@vercel/blob";
+import { put, list, download } from "@vercel/blob";
 
 // GET /api/log
 export async function GET() {
@@ -11,8 +11,9 @@ export async function GET() {
         .sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
         .map(async (blob) => {
           try {
-            const res = await fetch(blob.url);
-            const conversation = await res.json();
+            const { body } = await download(blob.url);
+            const text = await new Response(body).text();
+            const conversation = JSON.parse(text);
 
             return {
               id: blob.pathname,
@@ -33,10 +34,10 @@ export async function GET() {
     return NextResponse.json({ conversations: conversations.filter(Boolean) });
 
   } catch (error) {
-    console.error("Log API error:", error);
+    console.error("Log GET API error:", error);
     return NextResponse.json({ 
-      error: "Failed to save log",
-      detail: error.message  // add this line
+      error: "Failed to retrieve logs",
+      detail: error.message
     }, { status: 500 });
   }
 }
