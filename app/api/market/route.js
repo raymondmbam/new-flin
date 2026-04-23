@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStockData } from "@/lib/stockApi";
 
+export const dynamic = 'force-dynamic';
+
 // A fixed watchlist of popular tickers to scan
 const WATCHLIST = [
   "NVDA", "AAPL", "MSFT", "TSLA", "AMZN",
